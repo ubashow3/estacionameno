@@ -1,5 +1,11 @@
 // RENAME THIS FILE to script.js and place it in the same directory as index.php
 
+// Fix: Declare Tesseract, QRCode, and SETTINGS as global variables to resolve 'Cannot find name' errors.
+// These are expected to be available in the global scope from script tags in the HTML.
+declare var Tesseract: any;
+declare var QRCode: any;
+declare var SETTINGS: any;
+
 document.addEventListener('DOMContentLoaded', () => {
 
   // --- THEME SWITCHER ---
@@ -42,12 +48,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Plate search
     const vehicleList = document.getElementById('vehicle-list');
     searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toUpperCase();
+        // Fix: Cast e.target to HTMLInputElement to access the 'value' property.
+        const query = (e.target as HTMLInputElement).value.toUpperCase();
         vehicleList.querySelectorAll('.vehicle-item').forEach(item => {
-            if (item.dataset.plate.includes(query)) {
-                item.style.display = 'flex';
+            // Fix: Cast item to HTMLElement to access 'dataset' and 'style' properties.
+            const vehicleItem = item as HTMLElement;
+            if (vehicleItem.dataset.plate.includes(query)) {
+                vehicleItem.style.display = 'flex';
             } else {
-                item.style.display = 'none';
+                vehicleItem.style.display = 'none';
             }
         });
     });
@@ -56,15 +65,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const scannerModal = document.getElementById('plate-scanner-modal');
     const openScannerBtn = document.getElementById('open-scanner-btn');
     const closeScannerBtn = document.getElementById('close-scanner-btn');
-    const videoEl = document.getElementById('scanner-video');
-    const canvasEl = document.getElementById('scanner-canvas');
+    // Fix: Cast videoEl to HTMLVideoElement to access video-specific properties like 'srcObject', 'play', 'videoWidth', and 'videoHeight'.
+    const videoEl = document.getElementById('scanner-video') as HTMLVideoElement;
+    // Fix: Cast canvasEl to HTMLCanvasElement to access canvas-specific properties like 'getContext', 'width', and 'height'.
+    const canvasEl = document.getElementById('scanner-canvas') as HTMLCanvasElement;
     const statusEl = document.getElementById('scanner-status');
     const progressContainer = document.getElementById('scanner-progress-bar-container');
-    const progressBar = document.getElementById('scanner-progress-bar');
-    const recognizedTextEl = document.getElementById('scanner-recognized-text');
-    const captureBtn = document.getElementById('scanner-capture-btn');
-    const usePlateBtn = document.getElementById('scanner-use-plate-btn');
-    const plateInput = document.getElementById('plate');
+    const progressBar = document.getElementById('scanner-progress-bar') as HTMLElement;
+    const recognizedTextEl = document.getElementById('scanner-recognized-text') as HTMLElement;
+    // Fix: Cast captureBtn to HTMLButtonElement to access the 'disabled' property.
+    const captureBtn = document.getElementById('scanner-capture-btn') as HTMLButtonElement;
+    // Fix: Cast usePlateBtn to HTMLButtonElement to access the 'disabled' property.
+    const usePlateBtn = document.getElementById('scanner-use-plate-btn') as HTMLButtonElement;
+    // Fix: Cast plateInput to HTMLInputElement to access the 'value' property.
+    const plateInput = document.getElementById('plate') as HTMLInputElement;
     
     let tesseractWorker = null;
 
@@ -215,9 +229,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     vehicleList.addEventListener('click', e => {
-        const exitButton = e.target.closest('.register-exit-btn');
+        // Fix: Cast e.target to HTMLElement to access the 'closest' method.
+        const exitButton = (e.target as HTMLElement).closest('.register-exit-btn');
         if (exitButton) {
-            currentVehicle = JSON.parse(exitButton.dataset.vehicle);
+            currentVehicle = JSON.parse((exitButton as HTMLElement).dataset.vehicle);
             
             document.getElementById('exit-modal-plate').textContent = currentVehicle.plate;
             document.getElementById('exit-modal-model-color').textContent = `${currentVehicle.model} - ${currentVehicle.color}`;
@@ -256,7 +271,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.payment-method-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            selectedMethod = btn.dataset.method;
+            // Fix: Cast btn to HTMLElement to access the 'dataset' property.
+            selectedMethod = (btn as HTMLElement).dataset.method;
             if (selectedMethod === 'convenio') {
                 completeExit(0);
             } else {
@@ -267,13 +283,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const setupAwaitingStep = (method) => {
-        ['pix', 'card', 'cash'].forEach(m => document.getElementById(`payment-awaiting-${m}`).style.display = 'none');
-        document.getElementById(`payment-awaiting-${method}`).style.display = 'block';
+        ['pix', 'card', 'cash'].forEach(m => (document.getElementById(`payment-awaiting-${m}`) as HTMLElement).style.display = 'none');
+        (document.getElementById(`payment-awaiting-${method}`) as HTMLElement).style.display = 'block';
         
         const isElectronic = method === 'pix' || method === 'card';
-        document.getElementById('payment-awaiting-spinner').style.display = isElectronic ? 'flex' : 'none';
-        document.getElementById('payment-awaiting-attendant').style.display = method === 'cash' ? 'block' : 'none';
-        document.getElementById('payment-confirm-cash-btn').style.display = method === 'cash' ? 'block' : 'none';
+        (document.getElementById('payment-awaiting-spinner') as HTMLElement).style.display = isElectronic ? 'flex' : 'none';
+        (document.getElementById('payment-awaiting-attendant') as HTMLElement).style.display = method === 'cash' ? 'block' : 'none';
+        (document.getElementById('payment-confirm-cash-btn') as HTMLElement).style.display = method === 'cash' ? 'block' : 'none';
         
         if (method === 'pix') {
             generatePixQRCode();
@@ -321,8 +337,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const txid = currentVehicle.plate.replace(/[^A-Z0-9]/ig, '') + Date.now();
         const payload = generatePixPayload(SETTINGS.pixKey, SETTINGS.pixHolderName, SETTINGS.pixHolderCity, totalToPay, txid);
         
-        document.getElementById('pix-payload').value = payload;
-        document.getElementById('pix-payload').addEventListener('click', (e) => e.target.select());
+        // Fix: Cast the element to HTMLInputElement to access the 'value' property.
+        (document.getElementById('pix-payload') as HTMLInputElement).value = payload;
+        // Fix: Cast e.target to HTMLInputElement to access the 'select' method.
+        document.getElementById('pix-payload').addEventListener('click', (e) => (e.target as HTMLInputElement).select());
 
         new QRCode(qrCodeEl, {
             text: payload,
